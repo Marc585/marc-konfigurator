@@ -414,15 +414,14 @@
             -webkit-backdrop-filter: blur(30px);
             z-index: 200;
             display: none;
-            align-items: center;
-            justify-content: center;
             opacity: 0;
             transition: opacity 0.6s ease;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .result-overlay.active {
-            display: flex;
+            display: block;
             opacity: 1;
         }
 
@@ -431,7 +430,12 @@
             max-width: 580px;
             width: 100%;
             padding: 2.5rem 2.5rem 3rem;
-            margin: auto;
+            margin: 0 auto;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             animation: resultReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
         }
 
@@ -569,7 +573,8 @@
         /* ===== RESPONSIVE ===== */
         @media (max-width: 900px) {
             .main {
-                flex-direction: column-reverse;
+                display: flex;
+                flex-direction: column;
                 min-height: auto;
             }
 
@@ -584,19 +589,27 @@
                 max-height: none;
                 overflow: visible;
                 padding: 1.5rem 1rem;
+                order: 2;
             }
 
             .figure-panel {
-                position: relative;
-                top: auto;
-                height: 55vh;
-                min-height: 340px;
-                padding: 1.5rem 1rem;
+                order: 1;
+                position: sticky;
+                top: 56px;
+                z-index: 10;
+                height: auto;
+                min-height: auto;
+                padding: 1.25rem 1rem;
+                background: var(--bg);
+            }
+
+            .photos-container {
+                height: auto;
             }
 
             .photo-frame {
-                width: 140px;
-                height: 210px;
+                width: 120px;
+                height: 170px;
                 border-radius: 16px;
             }
 
@@ -618,19 +631,24 @@
                 height: 70px;
                 padding: 0 1rem;
             }
+
+            .result-card {
+                padding: 2rem 1.5rem;
+                min-height: auto;
+                justify-content: flex-start;
+                padding-top: 3rem;
+                padding-bottom: 3rem;
+            }
+
+            .result-couple-photo { width: 65vw; max-width: 280px; }
         }
 
         @media (max-width: 480px) {
             .cards-grid { grid-template-columns: 1fr; }
 
-            .figure-panel {
-                height: 45vh;
-                min-height: 280px;
-            }
-
             .photo-frame {
-                width: 120px;
-                height: 180px;
+                width: 100px;
+                height: 150px;
             }
 
             .photo-name { font-size: 0.9rem; }
@@ -638,7 +656,6 @@
             .result-percentage { font-size: 3.5rem; }
             .result-name { font-size: 2rem; }
             .result-card { padding: 1.5rem 1.25rem 2rem; }
-            .result-couple-photo { width: 65vw; max-width: 280px; }
         }
 
         ::selection {
