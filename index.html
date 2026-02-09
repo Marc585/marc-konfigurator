@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marc — Custom Konfigurator</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #eee9e1;
+            --card-bg: #ffffff;
+            --text: #1a1917;
+            --text-muted: #8a857c;
+            --text-light: #b5b0a6;
+            --accent: #c44839;
+            --accent-soft: rgba(196,72,57,0.08);
+            --border: rgba(0,0,0,0.06);
+            --shadow: 0 2px 16px rgba(0,0,0,0.06);
+            --shadow-hover: 0 8px 30px rgba(0,0,0,0.10);
+            --shadow-selected: 0 4px 20px rgba(196,72,57,0.12);
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(238,233,225,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+        }
+
+        .header-title {
+            font-family: 'DM Serif Display', serif;
+            font-style: italic;
+            font-size: 1.6rem;
+            font-weight: 400;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .header-badge {
+            padding: 0.25rem 0.85rem;
+            background: var(--text);
+            color: var(--bg);
+            border-radius: 50px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .header-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .header-progress-text {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .header-progress-text span {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .header-progress-bar {
+            width: 120px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .header-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--text);
+            border-radius: 4px;
+            transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* ===== MAIN LAYOUT ===== */
+        .main {
+            display: flex;
+            min-height: calc(100vh - 64px - 80px);
+            position: relative;
+        }
+
+        /* ===== LEFT PANEL — CARDS ===== */
+        .cards-panel {
+            flex: 0 0 45%;
+            max-width: 45%;
+            padding: 2rem 1.5rem 2rem 2rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 64px - 80px);
+        }
+
+        .category-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 0.75rem;
+            margin-top: 1.75rem;
+            padding-left: 0.25rem;
+        }
+
+        .category-label:first-child { margin-top: 0; }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            position: relative;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.1rem 1.15rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: var(--shadow);
+            border: 2px solid transparent;
+            user-select: none;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease-out both;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .card.selected {
+            border-color: var(--text);
+            box-shadow: var(--shadow-selected);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+        }
+
+        .card-emoji { font-size: 1.6rem; line-height: 1; }
+
+        .card-toggle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            background: transparent;
+        }
+
+        .card.selected .card-toggle {
+            background: var(--text);
+            border-color: var(--text);
+        }
+
+        .card-toggle svg {
+            width: 12px; height: 12px;
+            fill: none; stroke: white; stroke-width: 2.5;
+            stroke-linecap: round; stroke-linejoin: round;
+            opacity: 0; transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .card.selected .card-toggle svg { opacity: 1; transform: scale(1); }
+
+        .card-name {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.3rem;
+            line-height: 1.2;
+        }
+
+        .card-desc {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.55;
+        }
+
+        .card-weight {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.2rem 0.6rem;
+            background: var(--bg);
+            border-radius: 50px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .card.selected .card-weight {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        /* ===== RIGHT PANEL — PHOTOS ===== */
+        .figure-panel {
+            flex: 0 0 55%;
+            max-width: 55%;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px - 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .photos-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80%;
+            width: 100%;
+            position: relative;
+        }
+
+        .photo-side {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .photo-frame {
+            width: 190px;
+            height: 280px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.12);
+            position: relative;
+        }
+
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .photo-frame-elli img {
+            object-position: center 10%;
+        }
+
+        .photo-frame-marc img {
+            object-position: center 15%;
+        }
+
+        .photo-name {
+            font-family: 'DM Serif Display', serif;
+            font-style: italic;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            transition: color 0.4s ease;
+        }
+
+        /* Match heart between photos */
+        .match-heart {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0 0.5rem;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2;
+        }
+
+        .match-heart-icon {
+            font-size: 1.4rem;
+            opacity: 0.2;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: grayscale(1);
+        }
+
+        .match-heart-icon.glow {
+            opacity: 1;
+            filter: grayscale(0);
+            animation: heartBeat 1.5s ease-in-out infinite;
+        }
+
+        .match-pct {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-light);
+            transition: all 0.4s ease;
+        }
+
+        .match-pct.active {
+            color: var(--accent);
+        }
+
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            15% { transform: scale(1.25); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.15); }
+            60% { transform: scale(1); }
+        }
+
+        /* ===== BOTTOM BAR ===== */
+        .bottom-bar {
+            position: sticky;
+            bottom: 0;
+            z-index: 50;
+            background: rgba(238,233,225,0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 0 2rem;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.85rem 2.2rem;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+
+        .cta-button.disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .cta-button svg {
+            width: 16px; height: 16px;
+            stroke: currentColor; fill: none;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        }
+
+        .cta-hint {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        /* ===== RESULT OVERLAY ===== */
+        .result-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(238,233,225,0.97);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            overflow-y: auto;
+        }
+
+        .result-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .result-card {
+            text-align: center;
+            max-width: 580px;
+            padding: 2.5rem 2.5rem 3rem;
+            animation: resultReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+        }
+
+        @keyframes resultReveal {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .result-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .result-couple-photo {
+            width: 280px;
+            height: 340px;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            animation: photoReveal 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+        }
+
+        .result-couple-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 20%;
+            display: block;
+        }
+
+        @keyframes photoReveal {
+            from { opacity: 0; transform: scale(0.85) translateY(15px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .result-percentage {
+            font-family: 'DM Serif Display', serif;
+            font-size: 4rem;
+            font-weight: 400;
+            color: var(--text);
+            line-height: 1;
+            margin-bottom: 0.15rem;
+        }
+
+        .result-name {
+            font-family: 'DM Serif Display', serif;
+            font-style: italic;
+            font-size: 2.5rem;
+            color: var(--text);
+            margin-bottom: 1.25rem;
+        }
+
+        .result-text {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.85;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-traits {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.4rem;
+            margin-bottom: 2rem;
+        }
+
+        .result-trait-tag {
+            padding: 0.35rem 0.85rem;
+            background: var(--card-bg);
+            border-radius: 50px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .result-close {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            background: transparent;
+            border: 1.5px solid rgba(0,0,0,0.12);
+            border-radius: 50px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .result-close:hover {
+            border-color: var(--text);
+            color: var(--text);
+        }
+
+        /* ===== CONFETTI & HEARTS ===== */
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 201;
+            pointer-events: none;
+        }
+
+        .floating-hearts {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 202;
+            overflow: hidden;
+        }
+
+        .heart-float {
+            position: absolute;
+            font-size: 1.5rem;
+            animation: heartFloat 4s ease-in-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes heartFloat {
+            0% { opacity: 0; transform: translateY(100vh) scale(0); }
+            20% { opacity: 1; transform: translateY(60vh) scale(1); }
+            100% { opacity: 0; transform: translateY(-20vh) scale(0.5) rotate(20deg); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 900px) {
+            .main {
+                flex-direction: column-reverse;
+                min-height: auto;
+            }
+
+            .cards-panel,
+            .figure-panel {
+                flex: none;
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .cards-panel {
+                max-height: none;
+                overflow: visible;
+                padding: 1.5rem 1rem;
+            }
+
+            .figure-panel {
+                position: relative;
+                top: auto;
+                height: 55vh;
+                min-height: 340px;
+                padding: 1.5rem 1rem;
+            }
+
+            .photo-frame {
+                width: 140px;
+                height: 210px;
+                border-radius: 16px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.6rem;
+            }
+
+            .header {
+                padding: 0 1rem;
+                height: 56px;
+            }
+
+            .header-title { font-size: 1.3rem; }
+            .header-subtitle { display: none; }
+            .header-progress-bar { width: 80px; }
+
+            .bottom-bar {
+                height: 70px;
+                padding: 0 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cards-grid { grid-template-columns: 1fr; }
+
+            .figure-panel {
+                height: 45vh;
+                min-height: 280px;
+            }
+
+            .photo-frame {
+                width: 120px;
+                height: 180px;
+            }
+
+            .photo-name { font-size: 0.9rem; }
+
+            .result-percentage { font-size: 3.5rem; }
+            .result-name { font-size: 2rem; }
+            .result-card { padding: 2rem 1.5rem; }
+            .result-couple-photo { width: 220px; height: 280px; }
+        }
+
+        ::selection {
+            background: var(--accent);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <h1 class="header-title">Marc</h1>
+            <span class="header-badge">CUSTOM</span>
+            <span class="header-subtitle">Edition Elli</span>
+        </div>
+        <div class="header-right">
+            <span class="header-progress-text"><span id="count">0</span> / <span id="total">0</span></span>
+            <div class="header-progress-bar">
+                <div class="header-progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- LEFT: TRAIT CARDS -->
+        <section class="cards-panel" id="cards-panel"></section>
+
+        <!-- RIGHT: TWO PHOTOS -->
+        <section class="figure-panel">
+            <div class="photos-container">
+                <!-- Elli -->
+                <div class="photo-side" id="photo-elli">
+                    <div class="photo-frame photo-frame-elli">
+                        <img src="IMG_9956.jpg" alt="Elli" />
+                    </div>
+                    <span class="photo-name">Elli</span>
+                </div>
+
+                <!-- Heart indicator -->
+                <div class="match-heart" id="match-heart">
+                    <span class="match-heart-icon" id="heart-icon">&#10084;&#65039;</span>
+                    <span class="match-pct" id="match-pct">0%</span>
+                </div>
+
+                <!-- Marc -->
+                <div class="photo-side" id="photo-marc">
+                    <div class="photo-frame photo-frame-marc">
+                        <img src="IMG_6101 2.JPG" alt="Marc" />
+                    </div>
+                    <span class="photo-name">Marc</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+        <span class="cta-hint" id="cta-hint">Wähle mindestens 5 Eigenschaften</span>
+        <button class="cta-button disabled" id="cta-button" onclick="showResult()">
+            <span>Konfiguration abschließen</span>
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+    </div>
+
+    <!-- RESULT OVERLAY -->
+    <div class="result-overlay" id="result-overlay">
+        <div class="result-card">
+            <div class="result-label">Perfekter Match gefunden</div>
+            <div class="result-couple-photo">
+                <img src="WhatsApp Image 2026-02-09 at 22.44.57.jpeg" alt="Elli & Marc" />
+            </div>
+            <div class="result-percentage" id="result-pct">100%</div>
+            <div class="result-name">Elli & Marc</div>
+            <p class="result-text" id="result-text"></p>
+            <div class="result-traits" id="result-traits"></div>
+            <button class="result-close" onclick="closeResult()">Nochmal konfigurieren</button>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+    <div class="floating-hearts" id="floating-hearts"></div>
+
+    <script>
+        // ===== DATA =====
+        const categories = [
+            {
+                label: "PERSÖNLICHKEIT",
+                traits: [
+                    { name: "Neugierde", emoji: "🔍", desc: "Will alles wissen, hinterfragt die Welt und entdeckt ständig Neues — am liebsten mit dir.", weight: "Endlos" },
+                    { name: "Abenteuerlust", emoji: "🌍", desc: "Ob spontaner Roadtrip oder neues Restaurant — das Leben ist zu kurz für Langeweile.", weight: "24/7" },
+                    { name: "Tiefgründigkeit", emoji: "🌊", desc: "Kann stundenlang philosophieren und findet in jedem Gespräch eine neue Ebene.", weight: "Unendlich" },
+                    { name: "Einen an der Waffel", emoji: "🧇", desc: "Perfekt unperfekt. Die genau richtige Dosis Verrücktheit, die das Leben bunt macht.", weight: "100%" }
+                ]
+            },
+            {
+                label: "BEZIEHUNG",
+                traits: [
+                    { name: "Bester Freund", emoji: "🤝", desc: "Mit dem du über alles reden kannst — und über nichts. Beides fühlt sich richtig an.", weight: "Für immer" },
+                    { name: "Liebhaber", emoji: "🔥", desc: "Leidenschaft, die nicht nachlässt. Sieht dich an, als wärst du das Einzige im Raum.", weight: "Intensiv" },
+                    { name: "Verwirklichung", emoji: "🚀", desc: "Kein Ego-Trip, sondern Teamwork. Gemeinsam größer werden als es alleine je möglich wäre.", weight: "Grenzenlos" },
+                    { name: "Inspiration", emoji: "💡", desc: "Pusht dich — nicht weil er muss, sondern weil er an dich glaubt. Jeden einzelnen Tag.", weight: "Täglich" }
+                ]
+            },
+            {
+                label: "ÄUSSERES",
+                traits: [
+                    { name: "Sportliches Äußeres", emoji: "💪", desc: "Hält sich fit, nicht aus Zwang, sondern weil er weiß, dass man nur einen Körper hat.", weight: "Athletic" },
+                    { name: "Anziehende Optik", emoji: "😏", desc: "Der Typ, bei dem du zweimal hinschaust. Und beim dritten Mal immer noch lächelst.", weight: "Magnetisch" }
+                ]
+            },
+            {
+                label: "GEIST & CHARAKTER",
+                traits: [
+                    { name: "Intelligenz", emoji: "📚", desc: "Clever, aber nicht arrogant. Kann komplexe Dinge einfach erklären und lernt nie aus.", weight: "Level Max" },
+                    { name: "Einfühlsamkeit", emoji: "🫶", desc: "Spürt, wenn etwas nicht stimmt — noch bevor du es aussprichst. Hört wirklich zu.", weight: "Feinfühlig" },
+                    { name: "Nerd", emoji: "🤓", desc: "Kann sich stundenlang in Themen vertiefen. Seine Begeisterung ist einfach ansteckend.", weight: "Deep Dive" }
+                ]
+            },
+            {
+                label: "LIFESTYLE",
+                traits: [
+                    { name: "Lust am Leben", emoji: "🎉", desc: "Genießt jeden Moment, lebt intensiv und steckt dich mit seiner Lebensfreude an.", weight: "All-in" }
+                ]
+            }
+        ];
+
+        const selectedTraits = new Set();
+        let totalTraits = 0;
+
+        // Photo gap settings
+        const GAP_MAX = 55;   // px — starting gap (each side)
+        const GAP_MIN = -15;  // px — overlap when all selected
+
+        // ===== RENDER CARDS =====
+        function renderCards() {
+            const panel = document.getElementById('cards-panel');
+            let html = '';
+            let idx = 0;
+
+            categories.forEach((cat, catIdx) => {
+                html += `<div class="category-label">${cat.label}</div><div class="cards-grid">`;
+                cat.traits.forEach((trait, tIdx) => {
+                    const id = `card-${catIdx}-${tIdx}`;
+                    totalTraits++;
+                    html += `
+                        <div class="card" id="${id}" onclick="toggleTrait('${id}','${trait.name}')" style="animation-delay:${idx * 0.04}s">
+                            <div class="card-top">
+                                <span class="card-emoji">${trait.emoji}</span>
+                                <div class="card-toggle">
+                                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                </div>
+                            </div>
+                            <div class="card-name">${trait.name}</div>
+                            <div class="card-desc">${trait.desc}</div>
+                            <span class="card-weight">${trait.weight}</span>
+                        </div>
+                    `;
+                    idx++;
+                });
+                html += `</div>`;
+            });
+
+            panel.innerHTML = html;
+            document.getElementById('total').textContent = totalTraits;
+        }
+
+        // ===== TOGGLE =====
+        function toggleTrait(id, name) {
+            const card = document.getElementById(id);
+            if (selectedTraits.has(name)) {
+                selectedTraits.delete(name);
+                card.classList.remove('selected');
+            } else {
+                selectedTraits.add(name);
+                card.classList.add('selected');
+            }
+            updateProgress();
+            updatePhotos();
+        }
+
+        // ===== PROGRESS =====
+        function updateProgress() {
+            const count = selectedTraits.size;
+            const pct = (count / totalTraits) * 100;
+
+            document.getElementById('count').textContent = count;
+            document.getElementById('progress-fill').style.width = pct + '%';
+
+            const btn = document.getElementById('cta-button');
+            const hint = document.getElementById('cta-hint');
+
+            if (count >= 5) {
+                btn.classList.remove('disabled');
+                hint.textContent = 'Bereit — finde deinen Match';
+            } else {
+                btn.classList.add('disabled');
+                const r = 5 - count;
+                hint.textContent = `Noch ${r} Eigenschaft${r !== 1 ? 'en' : ''} wählen`;
+            }
+        }
+
+        // ===== PHOTO GAP ANIMATION =====
+        function updatePhotos() {
+            const count = selectedTraits.size;
+            const progress = count / totalTraits; // 0 to 1
+            const gap = GAP_MAX - progress * (GAP_MAX - GAP_MIN);
+
+            document.getElementById('photo-elli').style.transform = `translateX(${-gap}px)`;
+            document.getElementById('photo-marc').style.transform = `translateX(${gap}px)`;
+
+            // Update heart
+            const pctNum = Math.round(progress * 100);
+            const heartIcon = document.getElementById('heart-icon');
+            const matchPct = document.getElementById('match-pct');
+            matchPct.textContent = pctNum + '%';
+
+            if (pctNum > 0) {
+                matchPct.classList.add('active');
+            } else {
+                matchPct.classList.remove('active');
+            }
+
+            if (pctNum >= 60) {
+                heartIcon.classList.add('glow');
+            } else {
+                heartIcon.classList.remove('glow');
+            }
+
+            // Scale heart based on progress
+            const heartScale = 1 + progress * 0.8;
+            const heartOpacity = 0.2 + progress * 0.8;
+            heartIcon.style.transform = `scale(${heartScale})`;
+            heartIcon.style.opacity = heartOpacity;
+            heartIcon.style.filter = `grayscale(${1 - progress})`;
+        }
+
+        // ===== RESULT =====
+        function showResult() {
+            if (selectedTraits.size < 5) return;
+
+            const overlay = document.getElementById('result-overlay');
+            const pct = Math.round((selectedTraits.size / totalTraits) * 100);
+            document.getElementById('result-pct').textContent = pct + '%';
+
+            const tags = document.getElementById('result-traits');
+            tags.innerHTML = '';
+            selectedTraits.forEach(name => {
+                const tag = document.createElement('span');
+                tag.className = 'result-trait-tag';
+                tag.textContent = name;
+                tags.appendChild(tag);
+            });
+
+            let text = '';
+            if (pct === 100) {
+                text = `Du hast <strong>jede einzelne</strong> Eigenschaft ausgewählt — und es gibt genau einen Menschen, der all das vereint.<br><br>Neugierig, tiefgründig, hat einen an der Waffel und hält dich fest.<br><br>Dein perfekter Match heißt <strong>Marc</strong> — und er gehört schon dir.`;
+            } else if (pct >= 70) {
+                text = `<strong>${pct}% Match</strong> — fast alles, was du dir wünschst, gibt es in genau einer Person.<br><br>Neugierig, leidenschaftlich und mit der perfekten Prise Wahnsinn.<br><br>Sein Name? <strong>Marc.</strong> Und er steht schon vor dir.`;
+            } else {
+                text = `${pct}% — und selbst das reicht, denn es gibt jemanden, der genau diese Facetten in sich trägt.<br><br>Die restlichen Prozent entdeckst du jeden Tag ein Stückchen mehr.<br><br><strong>Marc</strong> ist dein perfekter Match.`;
+            }
+            document.getElementById('result-text').innerHTML = text;
+
+            overlay.classList.add('active');
+            setTimeout(() => launchConfetti(), 300);
+            setTimeout(() => launchHearts(), 600);
+        }
+
+        function closeResult() {
+            document.getElementById('result-overlay').classList.remove('active');
+        }
+
+        // ===== CONFETTI =====
+        function launchConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#c44839', '#e8b84b', '#d6d0c5', '#1a1917', '#e07b6a', '#f0d68a'];
+
+            for (let i = 0; i < 120; i++) {
+                particles.push({
+                    x: canvas.width / 2 + (Math.random() - 0.5) * 300,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 1) * 14 - 4,
+                    w: Math.random() * 8 + 3,
+                    h: Math.random() * 4 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 10,
+                    gravity: 0.14 + Math.random() * 0.08,
+                    opacity: 1
+                });
+            }
+
+            let frame = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                frame++;
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.vy += p.gravity;
+                    p.y += p.vy;
+                    p.rotation += p.rotSpeed;
+                    p.vx *= 0.99;
+                    if (frame > 50) p.opacity -= 0.012;
+                    if (p.opacity > 0) {
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate(p.rotation * Math.PI / 180);
+                        ctx.globalAlpha = Math.max(0, p.opacity);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                        ctx.restore();
+                    }
+                });
+                if (particles.some(p => p.opacity > 0)) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            animate();
+        }
+
+        // ===== HEARTS =====
+        function launchHearts() {
+            const container = document.getElementById('floating-hearts');
+            const emojis = ['❤️', '🤍', '🖤', '✨', '🤎'];
+            for (let i = 0; i < 18; i++) {
+                setTimeout(() => {
+                    const h = document.createElement('div');
+                    h.className = 'heart-float';
+                    h.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    h.style.left = Math.random() * 100 + '%';
+                    h.style.animationDuration = (3 + Math.random() * 3) + 's';
+                    h.style.fontSize = (1 + Math.random() * 1.5) + 'rem';
+                    container.appendChild(h);
+                    setTimeout(() => h.remove(), 6000);
+                }, i * 180);
+            }
+        }
+
+        // ===== INIT =====
+        renderCards();
+        updateProgress();
+        updatePhotos();
+
+        window.addEventListener('resize', () => {
+            const c = document.getElementById('confetti-canvas');
+            c.width = window.innerWidth;
+            c.height = window.innerHeight;
+        });
+    </script>
+
+</body>
+</html>
